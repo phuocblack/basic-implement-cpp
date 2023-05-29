@@ -1,0 +1,4 @@
+#ifndef CHAINFUNCTOR_H
+#define CHAINFUNCTOR_H
+
+#endif // CHAINFUNCTOR_H

@@ -1,0 +1,4 @@
+#ifndef QUEUEFREELOCK_H
+#define QUEUEFREELOCK_H
+
+#endif // QUEUEFREELOCK_H
