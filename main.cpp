@@ -1,5 +1,6 @@
 #include "source/cshared_ptr.h"
 #include "source/ChainFunctor.h"
+#include "source/QueueFreeLock.h"
 
 #include <iostream>
 #include <thread>
@@ -36,8 +37,18 @@ int xxx()
     return 1;
 }
 
+void test_queue() {
+    plh::queue_free_lock<int> test;
+    test.push(12);
+    auto a = test.pop();
+    std::cout << "queue size = " << test.size() << std::endl;
+    std::cout << "value pop = " << (*a) << std::endl;
+}
+
 int main() {
-    plh::Callable<std::function<void()>> a(&xxx);
-    auto i = a.execute();
+    plh::Callable<std::function<void()>> a(&test_queue);
+    a.execute();
+
+
     getchar();
 }

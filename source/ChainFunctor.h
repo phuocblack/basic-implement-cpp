@@ -1,24 +1,37 @@
 #pragma once
 
-#include <iostream>
+#include "QueueFreeLock.h"
+
 #include <functional>
+#include <iostream>
 
 namespace plh {
 
-template<typename F>
+template <typename F>
 class Callable {
-public:
+ public:
+  explicit Callable(F&& executor) : _fn{std::move(executor)} {}
+  explicit Callable(const F& executor) : _fn{executor} {}
+  ~Callable() {}
 
-    explicit Callable(F&& handler) : _fn{new F( std::forward<F>(handler))} {}
-    ~Callable() {delete _fn;}
+  template <typename... ARGS>
+  decltype(auto) execute(ARGS&&... args) {
+    auto executor = std::bind(_fn, std::forward<ARGS>(args)...);
+    return executor();
+  }
 
-    template<typename ...ARGS>
-    decltype(auto) execute(ARGS&&... args) {
-        auto ret = std::invoke(std::forward<F>(*_fn), std::forward<ARGS>(args)...);
-        return ret;
-    }
-private:
-    F* _fn = nullptr;
+ private:
+  F _fn;
 };
 
-}
+template<typename T>
+class ExecutorChainIF {
+  public:
+   ExecutorChainIF() = default;
+   ~ExecutorChainIF() = default;
+
+   virtual ExecutorChainIF& then(Callable<T>) {
+    return *this;
+   }
+};
+}  // namespace plh
