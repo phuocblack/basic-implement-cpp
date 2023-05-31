@@ -1,10 +1,13 @@
 #include "source/cshared_ptr.h"
 #include "source/ChainFunctor.h"
 #include "source/QueueFreeLock.h"
+#include "source/ThreadPool.h"
 
 #include <iostream>
 #include <thread>
 #include <stdio.h>
+#include <chrono>
+using namespace std::chrono;
 
 using namespace std;
 
@@ -45,9 +48,46 @@ void test_queue() {
     std::cout << "value pop = " << (*a) << std::endl;
 }
 
+int testPool1(int a, int b) {
+    std::cout << "Pool 1..." << std::endl;
+    std::this_thread::sleep_for(1s);
+    return a*b;
+}
+
+void testPool2() {
+    std::cout << "Pool 2..." << std::endl;
+    std::this_thread::sleep_for(2s);
+}
+
+void poolTester()
+{
+    auto start = high_resolution_clock::now();
+    /* Compute square of numbers. */
+    plh::PoolExecutor pool(3);
+    pool.startPool();
+    std::vector<std::future<int>> results;
+
+    for (int i = 0; i < 8; ++i)
+    {
+        auto future = pool.executeTask([i] {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            return i * i;
+        });
+        results.emplace_back(std::move(future));
+    }
+
+    for (auto &result : results)
+        std::cout << result.get() << ' ';
+    std::cout << std::endl;
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(stop - start);
+    cout << "Time = " << duration.count() << endl;
+}
+
 int main() {
-    plh::Callable<std::function<void()>> a(&test_queue);
-    a.execute();
+//    plh::Callable<std::function<void()>> a(&test_queue);
+//    a.execute();
+    poolTester();
 
 
     getchar();
