@@ -13,22 +13,31 @@
 using namespace std::chrono_literals;
 
 namespace plh {
-class PoolExecutor {
+using TimerExecutor = std::function<void()>;
+class PoolExecutorIF {
 public:
-    PoolExecutor(size_t n = 1) {
-        _nthreads = n;
-    }
+    PoolExecutorIF() = default;
+    ~PoolExecutorIF() = default;
+
+    PoolExecutorIF(const PoolExecutorIF&) = delete;
+    PoolExecutorIF(PoolExecutorIF&&) = delete;
+    PoolExecutorIF& operator=(const PoolExecutorIF&) = delete;
+    PoolExecutorIF& operator=(PoolExecutorIF&&) = delete;
+
+    virtual bool isRunning() const = 0;
+    virtual void executeTask(TimerExecutor&& f) = 0;
+};
+
+class PoolExecutor : public PoolExecutorIF {
+public:
+    PoolExecutor() {}
 
     ~PoolExecutor() {
         waitAndStop();
     }
 
-    PoolExecutor(const PoolExecutor&) = delete;
-    PoolExecutor(PoolExecutor&&) = delete;
-    PoolExecutor& operator=(const PoolExecutor&) = delete;
-    PoolExecutor& operator=(PoolExecutor&&) = delete;
-
-    void startPool() {
+    void startPool(size_t n = 1) {
+        _nthreads = n;
         std::cout << "[Pool] Start thread pool!" << std::endl;
         for (int i = 0; i < _nthreads; ++i) {
             auto t = std::thread([this] {living();});
@@ -36,7 +45,7 @@ public:
         }
     }
 
-    bool isRunning() const {
+    bool isRunning() const override {
         return !_stop.load();
     }
 
@@ -50,6 +59,10 @@ public:
         for (auto& thread : workers) {
             thread.join();
         }
+    }
+
+    void executeTask(TimerExecutor&& f) override {
+        this->executeTask(std::forward<TimerExecutor>(f));
     }
 
     template<typename F, typename ...ARGS>
@@ -78,11 +91,11 @@ private:
                 std::unique_lock<std::mutex> lk(_mu);
                 _cv.wait(lk, [this] { return _stop.load() || !_tasks.isEmpty(); });
 
-                if (!_stop.load() && _tasks.isEmpty()) return;
+                if (_stop.load() && _tasks.isEmpty()) return;
                 exec = std::move(_tasks.pop());
             }
             std::cout << "[" << std::this_thread::get_id() << "]" << "Executing task..." << std::endl;
-            (*exec)();
+            if (exec) (*exec)();
             std::cout << "[" << std::this_thread::get_id() << "]" << "Executing task done" << std::endl;
         }
     }

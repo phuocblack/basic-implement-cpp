@@ -23,15 +23,4 @@ class Callable {
  private:
   F _fn;
 };
-
-template<typename T>
-class ExecutorChainIF {
-  public:
-   ExecutorChainIF() = default;
-   ~ExecutorChainIF() = default;
-
-   virtual ExecutorChainIF& then(Callable<T>) {
-    return *this;
-   }
-};
 }  // namespace plh

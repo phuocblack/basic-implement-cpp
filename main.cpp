@@ -63,11 +63,11 @@ void poolTester()
 {
     auto start = high_resolution_clock::now();
     /* Compute square of numbers. */
-    plh::PoolExecutor pool(3);
-    pool.startPool();
+    plh::PoolExecutor pool;
+    pool.startPool(4);
     std::vector<std::future<int>> results;
 
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < 16; ++i)
     {
         auto future = pool.executeTask([i] {
             std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -75,6 +75,7 @@ void poolTester()
         });
         results.emplace_back(std::move(future));
     }
+    pool.executeTask([]()->void{cout << "Test void function in pool!!\n";});
 
     for (auto &result : results)
         std::cout << result.get() << ' ';
@@ -88,6 +89,7 @@ int main() {
 //    plh::Callable<std::function<void()>> a(&test_queue);
 //    a.execute();
     poolTester();
+
 
 
     getchar();
