@@ -37,6 +37,7 @@ class PoolExecutor : public PoolExecutorIF {
 
   void startPool(size_t n = 1) override {
     _nthreads = n;
+    _stop.store(false);
     std::cout << "[Pool] Start thread pool!" << std::endl;
     for (int i = 0; i < _nthreads; ++i) {
       auto t = std::thread([this] { living(); });
@@ -58,10 +59,10 @@ class PoolExecutor : public PoolExecutorIF {
     }
   }
 
-  void executeTask(Executor f) override { this->executeTask(f); }
+  void executeTask(Executor f) override { this->executeTasks(f); }
 
   template <typename F, typename... ARGS>
-  std::future<std::result_of_t<F && (ARGS && ...)>> executeTask(
+  std::future<std::result_of_t<F && (ARGS && ...)>> executeTasks(
       F&& callee, ARGS&&... args) {
     using return_type = std::result_of_t<F && (ARGS && ...)>;
 
@@ -101,7 +102,7 @@ class PoolExecutor : public PoolExecutorIF {
   size_t _nthreads = 1;
   std::mutex _mu;
   std::vector<std::thread> workers;
-  std::atomic<bool> _stop = false;
+  std::atomic<bool> _stop = true;
   std::condition_variable _cv;
   queue_free_lock<std::function<void()>> _tasks;
 };

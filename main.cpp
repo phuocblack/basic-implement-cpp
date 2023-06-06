@@ -2,6 +2,7 @@
 #include "source/ChainFunctor.h"
 #include "source/QueueFreeLock.h"
 #include "source/ThreadPool.h"
+#include "source/Notifier.h"
 
 #include <iostream>
 #include <thread>
@@ -69,7 +70,7 @@ void poolTester()
 
     for (int i = 0; i < 16; ++i)
     {
-        auto future = pool.executeTask([i] {
+        auto future = pool.executeTasks([i] {
             std::this_thread::sleep_for(std::chrono::seconds(1));
             return i * i;
         });
@@ -83,14 +84,24 @@ void poolTester()
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
     cout << "Time = " << duration.count() << endl;
+    auto c = getchar();
+}
+
+void testObs() {
+    plh::EventObserver ABC(std::make_shared<plh::PoolExecutor>());
+    auto i = ABC.registerEvent("abc/bca", []()->void{cout << "Test void function in pool!!\n";});
+    cout << "iii = " << i << endl;
+    auto z = ABC.registerEvent("abc/bca", []()->void{cout << "Test void function in pool!!\n";});
+    cout << "zzz = " << z << endl;
+
+    this_thread::sleep_for(2s);
+    ABC.signaling("abc/bca");
 }
 
 int main() {
 //    plh::Callable<std::function<void()>> a(&test_queue);
 //    a.execute();
+    //testObs();
     poolTester();
 
-
-
-    getchar();
 }
